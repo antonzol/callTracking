@@ -28,8 +28,8 @@ function call_tracking_install () {
 														  number_telephone varchar(20),
 														  extension_number varchar(20), 
 														  id_analytic varchar(255) NOT NULL,
-														  time_active time NOT NULL,
-														  time_expectation time NOT NULL)";
+														  time_active datetime NOT NULL,
+														  time_expectation datetime NOT NULL)";
 	$wpdb->query($query);
 	$wpdb->query("CREATE TABLE IF NOT EXISTS " . $wpdb->prefix . "ip_ignore (id int PRIMARY KEY auto_increment, ip varchar(100))");
 	$wpdb->query("CREATE TABLE IF NOT EXISTS " . $wpdb->prefix . "busy_number (id int PRIMARY KEY auto_increment, date_report datetime, count_number int)");
@@ -102,9 +102,10 @@ function get_cookie () {
 function select_number () {
 	global $wpdb;
 	$cookie = get_cookie();
+
 	$numbers = $wpdb->get_row("SELECT * FROM " . $wpdb->prefix . "calltracking_telephone WHERE id_analytic = {$cookie} AND time_active > NOW()");
 	$number = ($numbers) ? $numbers->number_telephone : '';
-	
+
 	if(empty($number)) {
 		$numbers = $wpdb->get_row("SELECT * FROM " . $wpdb->prefix . "calltracking_telephone WHERE id_analytic <> {$cookie} AND time_expectation < NOW() LIMIT 1");
 		$number = ($numbers) ? $numbers->number_telephone : '';
@@ -113,6 +114,8 @@ function select_number () {
 		$number_id = $numbers->id;
 	}
 	
+	var_dump($numbers);
+
 	if(!empty($number)) {
 		$timestamp = time();
 		$time = getdate($timestamp);

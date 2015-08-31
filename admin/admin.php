@@ -1,8 +1,8 @@
 <?php 
 
 function add_admin_page () {
-	add_options_page('Настройки Call Tracking','Call Tracking', 8, 'call_tracking', 'create_options_page');
-	add_options_page('Фильтр по IP','Фильтр по IP', 8, 'filter_ip', 'create_options_ip');
+	add_menu_page('Настройки Call Tracking','Call Tracking', 'manage_options', 'call_tracking', 'create_options_page', 'dashicons-phone', 80);
+	add_submenu_page('call_tracking','Фильтр по IP', 'Фильтр IP', 'manage_options', 'filter_ip', 'create_options_ip');
 
 	add_option('default_number', 'Не задано');
 	add_option('id_analytics', 'Не задано');
@@ -205,9 +205,9 @@ if(isset($_POST['submit_telephone'])){
 	$data = $wpdb->get_results("SELECT * FROM " . $wpdb->prefix . "calltracking_telephone");
 ?>
 		<div class="number_table" style='padding: 10px 20px 20px; border: 1px solid #DADADA; margin-top: 20px;'>
-			<p style="font-size: 15px; text-align: center;">Список активности:</p>
+			<p style="font-size: 15px;">Список активности:</p>
 			
-			<table class="wp-list-table widefat fixed striped pages">
+			<table class="wp-list-table widefat fixed striped pages" style="width: 1000px;">
 				<thead>
 					<th>ID</th>
 					<th>Номер</th>
