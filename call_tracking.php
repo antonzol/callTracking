@@ -9,7 +9,8 @@ Author URI: http://it4u.ua/
 */
 
 require_once 'admin/admin.php';
-require_once 'admin/report_page.php';
+require_once 'admin/issued_number.php';
+require_once 'admin/busy_number.php';
 require_once 'push_call.php';
 
 function check_cookie ($cookie) {

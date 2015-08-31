@@ -1,8 +1,8 @@
 <?
-function add_page_report () {
-	add_submenu_page('call_tracking', 'Статистика по Call Tracking', 'Выдача номеров', 'manage_options', 'call_tracking_reports', 'create_tracking_reports');
+function add_page_issued () {
+	add_submenu_page('call_tracking', 'Статистика по выданим номерам', 'Выдача номеров', 'manage_options', 'calltracking_issued_number', 'create_issued_page');
 }
-function create_tracking_reports () {
+function create_issued_page () {
 	global $wpdb;
 	
 	$issued_dynamic_number = $wpdb->get_results("SELECT date_report, COUNT( DISTINCT (cookie) ) AS c
@@ -16,12 +16,6 @@ function create_tracking_reports () {
 												  WHERE issued_default_number = 1
 												  AND DATE( date_report ) > DATE( NOW( ) - INTERVAL 30 DAY ) 
 											      GROUP BY date_report, issued_dynamic_number", OBJECT_K);
-
-	$busy_number = $wpdb->get_results("SELECT * FROM " . $wpdb->prefix . "busy_number ORDER BY date_report DESC LIMIT 100");
-	$calls = $wpdb->get_results("SELECT DISTINCT cookie, caller_id, called_did, date_report, elapsed_time
-								 FROM " . $wpdb->prefix . "issued_number WHERE status = 1
-								 ORDER BY date_report DESC 
-								 LIMIT 100");
 
 	$timestamp = time();
 	$time = getdate($timestamp);
@@ -164,59 +158,16 @@ var options = {
 							<?php foreach (array_reverse($cound_default) as $value) : ?>
 								<td><?php echo $value;?></td>
 							<?php endforeach; ?>
-						</tr>
+						</tr>   
 					</table>
 				</td>
 			</tr>
 		</table>
 		<?php endif; ?>
 
-		<?php if($busy_number) : ?>
-		<p style="font-size: 18px; margin: 10px 0;">Количество занятых номеров: </p>
-		<table class="wp-list-table widefat fixed striped pages table_reports" style="width: 500px;">
-			<tr>
-				<th style="text-align:center;">Время</th>
-				<th style="text-align:center;">Количество:</th>
-			</tr>
-			<?php foreach ($busy_number as $key => $value) : ?>	
-			<?php 
-				$current_time = explode(' ', $value->date_report);
-			?>
-			<tr>
-				<td><?php echo $current_time[1]; ?></td>
-				<td><?php echo $value->count_number; ?></td>
-			</tr>
-			<?php endforeach; ?>
-		</table>
-		<?php endif; ?>
-
-		<p style="font-size: 18px;">Информация о последних звонках:</p>
-		<?php if($calls) : ?>
-		<table class="wp-list-table widefat fixed striped pages" style="width: 90%;">
-			<tr>
-				<th>Исходящий номер</th>
-				<th>Входящий номер</th>
-				<th>Cookie</th>
-				<th>Время после первого хита</th>
-				<th>Дата</th>
-			</tr>
-			<?php foreach ($calls as $key => $value) : ?>	
-			<tr>
-				<td><?php echo $value->caller_id; ?></td>
-				<td><?php echo $value->called_did; ?></td>
-				<td><?php echo $value->cookie; ?></td>
-				<td><?php echo $value->elapsed_time; ?></td>
-				<td><?php echo $value->date_report; ?></td>
-			</tr>
-			<?php endforeach; ?>
-		</table>
-		<?php endif; ?>
-		<?php if(!$calls) : ?>
-			<p style="font-size: 18px;">Звонков нет:</p>
-		<?php endif; ?>
-
 	</div>
 <?php
+
 }
 
-add_action('admin_menu', 'add_page_report');
+add_action('admin_menu', 'add_page_issued');
