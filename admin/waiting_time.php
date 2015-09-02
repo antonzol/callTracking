@@ -5,7 +5,7 @@ function add_page_waiting () {
 function create_waiting_time () {
 	global $wpdb;
 	
-	$waiting_time = $wpdb->get_results("SELECT date_report, elapsed_time FROM `wp_issued_number` WHERE DATE( date_report ) > DATE( NOW( ) - INTERVAL 30 DAY ) AND status = 1");
+	$waiting_time = $wpdb->get_results("SELECT date_report, elapsed_time FROM `" . $wpdb->prefix . "issued_number` WHERE DATE( date_report ) > DATE( NOW( ) - INTERVAL 30 DAY ) AND status = 1");
 
 	$timestamp = time();
 	$time = getdate($timestamp);
@@ -15,8 +15,6 @@ function create_waiting_time () {
 	$hours = $time['hours'];
 	$minutes = $time['minutes'];
 	$seconds = $time['seconds'];
-
-	echo date("d.m", strtotime("2015-08-10"));
 
 	$array_result = array();
 
@@ -71,16 +69,13 @@ function create_waiting_time () {
 
 			<?php 
 				if($value['avg'] != 0 && $value['count'] != 0) {
-					$tmp_avg = $value['avg'] / $value['count'];
-					$h = 0;
-					$m = 0;
-					$s = 0;
+					$avg =  date("H:i:s", mktime(0, 0, $value['avg'] / $value['count']));
+				} else {
+					$avg = "00:00:00";
 				}
 			?>
-			<td><?php echo ($value['avg'] != 0 && $value['count'] != 0) ? $value['avg'] / $value['count'] : "00:00:00"; ?></td>
-			
-
-			<td><?php echo $value['max']; ?></td>
+			<td><?php echo $avg; ?></td>
+			<td><?php echo date("H:i:s", mktime(0, 0, $value['max'])); ?></td>
 		</tr>
 		<?php endforeach; ?>
 	</table>

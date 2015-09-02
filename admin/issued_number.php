@@ -6,13 +6,13 @@ function create_issued_page () {
 	global $wpdb;
 	
 	$issued_dynamic_number = $wpdb->get_results("SELECT date_report, COUNT( DISTINCT (cookie) ) AS c
-												FROM wp_issued_number
+												FROM " . $wpdb->prefix . "issued_number
 												WHERE issued_dynamic_number = 1
 												AND DATE( date_report ) > DATE( NOW( ) - INTERVAL 30 DAY ) 
 												GROUP BY date_report, issued_dynamic_number", OBJECT_K);
 
 	$issued_numbers_default = $wpdb->get_results("SELECT date_report, COUNT( DISTINCT (cookie) ) AS c
-												  FROM wp_issued_number
+												  FROM " . $wpdb->prefix . "issued_number
 												  WHERE issued_default_number = 1
 												  AND DATE( date_report ) > DATE( NOW( ) - INTERVAL 30 DAY ) 
 											      GROUP BY date_report, issued_dynamic_number", OBJECT_K);

@@ -48,7 +48,7 @@ function create_tracking_busy () {
 	<div class="wrap">
 		<h2>Статистика занаятости номеров с групировкой каждые (10 мин) за последие 30 дней:</h2>
 	</div>
-	<div style="overflow: auto;padding: 0 50px;">
+	<div style="overflow: auto; padding: 0 50px;">
 			
 		<script src="<?php echo plugins_url(); ?>/callTracking/js/Chart.min.js"></script>
 		<canvas id="myChart" style="width:100%; height:500px;"></canvas>
