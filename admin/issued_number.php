@@ -30,7 +30,7 @@ function create_issued_page () {
 	$cound_dynamic = array();
 	$cound_default = array();
 
-	for($i = 0; $i < 30; $i++){
+	for($i = 0; $i < 25; $i++){
 		$temp = mktime($hours, $minutes, $seconds, $month, $day, $year);
 		$label_date[] = date("d.m", $temp);
 		$temp_date = date("Y-m-d", $temp);
@@ -132,7 +132,7 @@ var options = {
 </script>
 
 		<?php if(!empty($issued_dynamic_number)) : ?>
-		<p style="font-size: 18px; margin: 10px 0;">Выдача номеров за последние 30 дней</p>
+		<p style="font-size: 18px; margin: 10px 0;">Выдача номеров за последние 25 дней</p>
 		<table class="wp-list-table widefat striped pages table_reports">
 			<tr>
 				<td>
@@ -149,12 +149,12 @@ var options = {
 								<td><?php echo $value;?></td>
 							<?php endforeach; ?>
 						</tr>
-						<tr>
+						<tr style="background-color: rgba(151,187,205,0.2);">
 							<?php foreach (array_reverse($cound_dynamic) as $value) : ?>
 								<td><?php echo $value;?></td>
 							<?php endforeach; ?>
 						</tr>
-						<tr>
+						<tr style="background-color: rgba(220,220,220,0.2);">
 							<?php foreach (array_reverse($cound_default) as $value) : ?>
 								<td><?php echo $value;?></td>
 							<?php endforeach; ?>

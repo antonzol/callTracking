@@ -194,7 +194,7 @@ if(isset($_POST['submit_telephone'])){
 		
 		<div style='max-width: 600px; padding: 10px 20px 20px; margin: 20px 0 0 20px; float:left;'>
 			<h3 class="title">Описание</h3>
-			<p>Для того что бы вывести телефоны в шаблон. Вставте следеющую строку - [call_tracking_number].</p>
+			<p>Для того что бы вывести телефоны в шаблон. Вставте следеющую строку - [call_tracking_number], также даний код должен быть обернут в тег с атрибутом itemprop="telephone".</p>
 		</div>
 
 		<div style='clear:both;'></div>
@@ -207,14 +207,14 @@ if(isset($_POST['submit_telephone'])){
 		<div class="number_table" style='padding: 10px 20px 20px; border: 1px solid #DADADA; margin-top: 20px;'>
 			<p style="font-size: 15px;">Список активности:</p>
 			
-			<table class="wp-list-table widefat fixed striped pages" style="width: 1000px;">
+			<table class="wp-list-table widefat striped pages" style="width: 800px">
 				<thead>
-					<th>ID</th>
-					<th>Номер</th>
-					<th>Номер сессии</th>
-					<th>Время сессии до</th>
-					<th>Время ожидания до</th>
-					<th></th>
+					<th width="30px">ID</th>
+					<th width="100px">Номер</th>
+					<th width="160px">Номер сессии</th>
+					<th width="140px">Время сессии до</th>
+					<th width="140px">Время ожидания до</th>
+					<th width="80px"></th>
 				</thead>
 				<tbody>
 					<?php foreach ($data as $value) { ?>

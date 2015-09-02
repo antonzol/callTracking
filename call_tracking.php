@@ -11,15 +11,9 @@ Author URI: http://it4u.ua/
 require_once 'admin/admin.php';
 require_once 'admin/issued_number.php';
 require_once 'admin/busy_number.php';
+require_once 'admin/waiting_time.php';
 require_once 'push_call.php';
 
-function check_cookie ($cookie) {
-	if(isset($_COOKIE[$cookie])){
-		return true;
-	} else {
-		return false; 
-	}
-}
 
 function call_tracking_install () {
 	global $wpdb;
@@ -93,16 +87,20 @@ function check_ip($ip) {
 	return false;
 }
 
-function get_cookie () {
-	if(isset($_COOKIE['_ga'])) {
-		$cookie = $_COOKIE['_ga'];
+function check_cookie ( ) {
+	return ($_COOKIE['_ga']) ? true : false;
+}
+
+function get_cookie ( $cookie ) {
+	if(isset($cookie)) {
 		return substr($cookie, 6);
 	}
 }
 
-function select_number () {
+function select_number ($cookie = null) {
 	global $wpdb;
-	$cookie = get_cookie();
+
+	$cookie = get_cookie(($cookie != null) ? $cookie : $_COOKIE['_ga']);
 
 	$numbers = $wpdb->get_row("SELECT * FROM " . $wpdb->prefix . "calltracking_telephone WHERE id_analytic = {$cookie} AND time_active > NOW()");
 	$number = ($numbers) ? $numbers->number_telephone : '';
@@ -115,8 +113,6 @@ function select_number () {
 		$number_id = $numbers->id;
 	}
 	
-	var_dump($numbers);
-
 	if(!empty($number)) {
 		$timestamp = time();
 		$time = getdate($timestamp);
@@ -151,13 +147,17 @@ function get_number () {
 	liberation_phone();
 	$ip = check_ip($_SERVER["REMOTE_ADDR"]);
 	
+	if(!check_cookie()) {
+		wp_register_script("get_dynamic_number", plugins_url() . "/callTracking/js/get_number.js", array(), false, true);
+		wp_enqueue_script("get_dynamic_number");
+	}
+
 	if($ip == false) {
 		$number = select_number();
 	} else 
 		$number = get_option('default_number');
 	
 	$tmp = '+' . substr($number, 0, 1) . ' (' . substr($number, 1, 3) . ') ' . substr($number, 4, 3) . '-' . substr($number, 7, 2) . '-' . substr($number, 9, 2);
-
 	return $tmp;
 }
 
@@ -170,5 +170,24 @@ add_action('init', 'create_shortcode');
 add_filter('widget_text', 'do_shortcode');
 register_activation_hook(__FILE__, 'call_tracking_install');
 register_deactivation_hook(__FILE__, 'call_tracking_uninstall');
+
+
+
+function ajax_get_number ( ) {
+	liberation_phone();
+	$ip = check_ip($_SERVER["REMOTE_ADDR"]);
+	
+	if($ip == false) {
+		$number = select_number($_POST['clientId']);
+	} else 
+		$number = get_option('default_number');
+	
+	$tmp = '+' . substr($number, 0, 1) . ' (' . substr($number, 1, 3) . ') ' . substr($number, 4, 3) . '-' . substr($number, 7, 2) . '-' . substr($number, 9, 2);
+	echo $tmp;
+	die;
+}
+
+add_action('wp_ajax_nopriv_get_dnumber', 'ajax_get_number');
+add_action('wp_ajax_get_dnumber', 'ajax_get_number');
 
 ?>
