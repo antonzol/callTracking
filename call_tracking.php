@@ -1,14 +1,25 @@
 <?php
 /*
-Plugin Name: Call Tracking
+Plugin Name: CallTracking
 Plugin URI: http://it4u.ua/
-Description: Call Tracking
+Description: CallTracking use Google Analitycs and virtual ATC for create statistic to calls.
 Version: 1.0 beta
 Author: IT4U
 Author URI: http://it4u.ua/
 */
 
 require_once 'admin/admin.php';
+require_once "Calltracking.class.php";
+
+
+
+register_activation_hook(__FILE__, array('CallTracking', 'install__plugin')); 
+register_deactivation_hook(__FILE__, array('CallTracking', 'uninstall__plugin'));
+
+$callTracking = new CallTracking ();
+
+add_filter('widget_text', 'do_shortcode');
+/*
 require_once 'admin/issued_number.php';
 require_once 'admin/busy_number.php';
 require_once 'admin/waiting_time.php';
@@ -189,5 +200,4 @@ function ajax_get_number ( ) {
 
 add_action('wp_ajax_nopriv_get_dnumber', 'ajax_get_number');
 add_action('wp_ajax_get_dnumber', 'ajax_get_number');
-
-?>
+*/
