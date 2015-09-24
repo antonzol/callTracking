@@ -205,8 +205,11 @@ class CallTracking {
 	private function save_log_default_number () 
 	{
 		global $wpdb;
-		$wpdb->query("INSERT INTO " . $wpdb->prefix . "issued_number (called_did, cookie, date_report, issued_dynamic_number, status) 
+		$id_default = $wpdb->get_var("SELECT id FROM " . $wpdb->prefix . "issued_number WHERE date_report = DATE(NOW( )) AND issued_dynamic_number = 0");
+		if(!$id_default) {
+			$wpdb->query("INSERT INTO " . $wpdb->prefix . "issued_number (called_did, cookie, date_report, issued_dynamic_number, status) 
 					  VALUES ('{$this->default_number}', '{$this->cookie}', NOW(), 0, 0)");
+		}
 	}
 
 	public function createNumber () 

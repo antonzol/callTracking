@@ -10,194 +10,103 @@ Author URI: http://it4u.ua/
 
 require_once 'admin/admin.php';
 require_once "Calltracking.class.php";
-
-
-
-register_activation_hook(__FILE__, array('CallTracking', 'install__plugin')); 
-register_deactivation_hook(__FILE__, array('CallTracking', 'uninstall__plugin'));
-
-$callTracking = new CallTracking ();
-
-add_filter('widget_text', 'do_shortcode');
 /*
 require_once 'admin/issued_number.php';
 require_once 'admin/busy_number.php';
 require_once 'admin/waiting_time.php';
 require_once 'push_call.php';
+*/
 
-
-function call_tracking_install () {
-	global $wpdb;
-	$database_name = $wpdb->prefix . "calltracking_telephone";
-	$query = "CREATE TABLE IF NOT EXISTS {$database_name} (
-														  id int PRIMARY KEY auto_increment,
-														  number_telephone varchar(20),
-														  extension_number varchar(20), 
-														  id_analytic varchar(255) NOT NULL,
-														  time_active datetime NOT NULL,
-														  time_expectation datetime NOT NULL)";
-	$wpdb->query($query);
-	$wpdb->query("CREATE TABLE IF NOT EXISTS " . $wpdb->prefix . "ip_ignore (id int PRIMARY KEY auto_increment, ip varchar(100))");
-	$wpdb->query("CREATE TABLE IF NOT EXISTS " . $wpdb->prefix . "busy_number (id int PRIMARY KEY auto_increment, date_report datetime, count_number int)");
-	$wpdb->query("CREATE TABLE IF NOT EXISTS `wp_issued_number` (`id` int(11) NOT NULL AUTO_INCREMENT,
-																 `cookie` varchar(255),
-  																 `called_did` varchar(20) NOT NULL,
-  																 `caller_id` varchar(20) NOT NULL,
-  																 `date_report` date NOT NULL,
-  																 `issued_dynamic_number` int(1) NOT NULL,
-  																 `issued_default_number` int(1) NOT NULL,
- 																 `elapsed_time` varchar(20) NOT NULL,
- 																 `status` int(1) NOT NULL,
-  																 PRIMARY KEY (`id`))");
-	
-	add_option('default_number', '');
-	add_option('secret', '');
-	add_option('id_analytic', '');
-	add_option('time_active', '00:00');
-	add_option('time_expectation', '00:00');
-	add_option('event', '');
-	add_option('event_label', '');
-	add_option('type_event', '');
-	add_option('context', '');
-	add_option('cost', '');
-	add_option('last_parcing', date('20ymdHis', time()));
-}
-
-function call_tracking_uninstall () {
-	global $wpdb;
-	$wpdb->query("DROP TABLE IF EXISTS " . $wpdb->prefix . "calltracking_telephone");
-	$wpdb->query("DROP TABLE IF EXISTS " . $wpdb->prefix . "ip_ignore");
-	$wpdb->query("DROP TABLE IF EXISTS " . $wpdb->prefix . "busy_number");
-	$wpdb->query("DROP TABLE IF EXISTS " . $wpdb->prefix . "issued_number");
-
-	delete_option('default_number');
-	delete_option('secret');
-	delete_option('id_analytic');
-	delete_option('time_active');
-	delete_option('time_expectation');	
-	delete_option('event');
-	delete_option('event_label', '');
-	delete_option('type_event');
-	delete_option('context');
-	delete_option('cost');
-	delete_option('last_parcing');
-}
-
-function liberation_phone() {
-	global $wpdb;
-	$wpdb->query("UPDATE " . $wpdb->prefix . "calltracking_telephone SET id_analytic = '' WHERE time_active < NOW()");
-}
-
-function check_ip($ip) {
-	global $wpdb;
-	$all_ip = $wpdb->get_col("SELECT ip FROM " . $wpdb->prefix . "ip_ignore");
-
-	if(in_array($ip, $all_ip)) {
-		return true;
-	} 
-	return false;
-}
-
-function check_cookie ( ) {
-	return ($_COOKIE['_ga']) ? true : false;
-}
-
-function get_cookie ( $cookie ) {
-	if(isset($cookie)) {
-		return substr($cookie, 6);
-	}
-}
-
-function select_number ($cookie = null) {
-	global $wpdb;
-
-	$cookie = get_cookie(($cookie != null) ? $cookie : $_COOKIE['_ga']);
-
-	$numbers = $wpdb->get_row("SELECT * FROM " . $wpdb->prefix . "calltracking_telephone WHERE id_analytic = {$cookie} AND time_active > NOW()");
-	$number = ($numbers) ? $numbers->number_telephone : '';
-
-	if(empty($number)) {
-		$numbers = $wpdb->get_row("SELECT * FROM " . $wpdb->prefix . "calltracking_telephone WHERE id_analytic <> {$cookie} AND time_expectation < NOW() LIMIT 1");
-		$number = ($numbers) ? $numbers->number_telephone : '';
-		$number_id = (!empty($number)) ? $numbers->id : '';
-	} else {
-		$number_id = $numbers->id;
-	}
-	
-	if(!empty($number)) {
-		$timestamp = time();
-		$time = getdate($timestamp);
-		$year = $time['year'];
-		$month = $time['mon'];
-		$day = $time['mday'];
-		$hours = $time['hours'];
-		$minutes = $time['minutes'];
-		$seconds = $time['seconds'];
-		
-		$temp = mktime($hours + 3, $minutes + get_option('time_active'), $seconds, $month, $day, $year);
-		$time_active = date("y-m-d H:i:s", $temp); 
-		$temp = mktime($hours + 3, $minutes + get_option('time_active') + get_option('time_expectation'), $seconds, $month, $day, $year);
-		$time_expectation = date("Y-m-d H:i:s", $temp);
-		$wpdb->update($wpdb->prefix . 'calltracking_telephone', array('time_active' 	 => $time_active, 
-														  			  'time_expectation' => $time_expectation,
-														  			  'id_analytic' 	 => $cookie),
-												    			array('id' 				 => $number_id));
-		
-			$wpdb->query("INSERT INTO " . $wpdb->prefix . "issued_number (called_did, cookie, date_report, issued_dynamic_number, status) 
-																  VALUES ('{$number}', '{$cookie}', '{$time_active}', 1, 0)");
-
-	} else {
-		$number = get_option('default_number');
-		$wpdb->query("INSERT INTO " . $wpdb->prefix . "issued_number (called_did, cookie, date_report, issued_default_number, status) VALUES 
-				  ('{$number}', '{$cookie}', NOW(), 1, 0)");
-	}
-	return $number; 
-}
-
-function get_number () {
-	liberation_phone();
-	$ip = check_ip($_SERVER["REMOTE_ADDR"]);
-	
-	if(!check_cookie()) {
-		wp_register_script("get_dynamic_number", plugins_url() . "/callTracking/js/get_number.js", array(), false, true);
-		wp_enqueue_script("get_dynamic_number");
-	}
-
-	if($ip == false) {
-		$number = select_number();
-	} else 
-		$number = get_option('default_number');
-	
-	$tmp = '+' . substr($number, 0, 1) . ' (' . substr($number, 1, 3) . ') ' . substr($number, 4, 3) . '-' . substr($number, 7, 2) . '-' . substr($number, 9, 2);
-	return $tmp;
-}
-
-function create_shortcode (){
-	add_shortcode('call_tracking_number', 'get_number');
-}	
-
-add_action('init', 'create_shortcode');
-
+register_activation_hook(__FILE__, array('CallTracking', 'install__plugin')); 
+register_deactivation_hook(__FILE__, array('CallTracking', 'uninstall__plugin'));
 add_filter('widget_text', 'do_shortcode');
-register_activation_hook(__FILE__, 'call_tracking_install');
-register_deactivation_hook(__FILE__, 'call_tracking_uninstall');
 
-
+$callTracking = new CallTracking ();
 
 function ajax_get_number ( ) {
-	liberation_phone();
-	$ip = check_ip($_SERVER["REMOTE_ADDR"]);
-	
-	if($ip == false) {
-		$number = select_number($_POST['clientId']);
-	} else 
-		$number = get_option('default_number');
-	
-	$tmp = '+' . substr($number, 0, 1) . ' (' . substr($number, 1, 3) . ') ' . substr($number, 4, 3) . '-' . substr($number, 7, 2) . '-' . substr($number, 9, 2);
-	echo $tmp;
+	$callTracking = new CallTracking ();
+	echo $callTracking->createNumber();
 	die;
 }
 
 add_action('wp_ajax_nopriv_get_dnumber', 'ajax_get_number');
 add_action('wp_ajax_get_dnumber', 'ajax_get_number');
-*/
+
+
+function count_busy_number () {
+	global $wpdb;
+	$numbers = $wpdb->get_row("SELECT COUNT(id) as count_number FROM " . $wpdb->prefix . "calltracking_telephone WHERE id_analytic <> '' AND time_expectation > NOW()");
+	$wpdb->query("INSERT INTO " . $wpdb->prefix . "busy_number (date_report, count_number) VALUES 
+				 (NOW(), '{$numbers->count_number}')");
+}
+
+function push_call_ () {
+	global $wpdb;
+	$telephones = $wpdb->get_results("SELECT * FROM wp_calltracking_telephone");
+	
+	$caller_id = $_POST['caller_id'];
+	$called_did = $_POST['called_did'];
+	$callstart = $_POST['callstart'];
+
+	$body = "Начало звонка: " . $callstart . " Номер звонящего: " . $caller_id . "Номер на который звонят:" . $called_did;
+
+	$v = "v=1";
+	$tid = "&tid=" . get_option('id_analytic');
+	$t = "&t=" . get_option('type_event');
+	$ec = "&ec=" . get_option('context');
+	$ea = "&ea=" . get_option('event');
+	$el = "&el=" . get_option('event_label');
+	$ev = "&ev=" . get_option('cost');
+
+	$timestamp = time();
+	$time = getdate($timestamp);
+	$year = $time['year'];
+	$month = $time['mon'];
+	$day = $time['mday'];
+	$hours = $time['hours'];
+	$minutes = $time['minutes'];
+	$seconds = $time['seconds'];
+
+	$temp = mktime($hours + 3, $minutes + get_option('time_active'), $seconds, $month, $day, $year);
+	$time_active = date("y-m-d H:i:s", $temp);
+
+	$temp = mktime($hours + 3, $minutes + get_option('time_active') + get_option('time_expectation'), $seconds, $month, $day, $year);
+	$time_expectation = date("Y-m-d H:i:s", $temp);
+
+	foreach ($telephones as $value) {
+		if($value->number_telephone == $called_did && !empty($value->id_analytic)) {
+			$wpdb->query("UPDATE " . $wpdb->prefix . "calltracking_telephone SET time_active = '{$time_active}', time_expectation = '{$time_expectation}' WHERE id_analytic = '{$value->id_analytic}'");
+			$google_url = "http://www.google-analytics.com/collect?" . $v . $tid . '&cid=' . $value->id_analytic . $t . $ec . $ea . $el . $ev;			
+		
+			$temp = mktime($hours + 3, $minutes, $seconds, $month, $day, $year);
+			$current_time = date("y-m-d H:i:s", $temp);
+
+			$timestamp = strtotime($value->time_active);
+			$time = getdate($timestamp);
+			$year = $time['year'];
+			$month = $time['mon'];
+			$day = $time['mday'];
+			$hours = $time['hours'];
+			$minutes = $time['minutes'];
+			$seconds = $time['seconds'];
+			$temp = mktime($hours, $minutes - get_option('time_active'), $seconds, $month, $day, $year);
+			$start_hit = date("y-m-d H:i:s", $temp);
+
+			$elapsed_time = date("H:i:s", strtotime($current_time) - strtotime($start_hit));
+			$wpdb->query("UPDATE " . $wpdb->prefix . "issued_number SET caller_id = '{$caller_id}', elapsed_time = '{$elapsed_time}', status = 1 WHERE called_did = '{$value->number_telephone}'");
+			$body .= " " . $google_url;
+			file_get_contents($google_url);
+			break;
+		}
+	}
+
+	mail("a@it4u.ua", "sv@computers.net.ua", "callTracking", $body);
+}
+
+if(isset($_POST['caller_id'])) {
+	push_call_();
+};
+
+if(isset($_GET['doing_wp_cron']) && $_GET['doing_wp_cron'] == 'count_busy_number') {
+	count_busy_number();
+};
