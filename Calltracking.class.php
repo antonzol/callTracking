@@ -219,5 +219,70 @@ class CallTracking {
 		return $tmp;
 	} 
 
+	private function getNumbersForPush () {
+		global $wpdb;
+		$telephones = $wpdb->get_results("SELECT * FROM wp_calltracking_telephone");
+		return ($telephones) ? $telephones : false;
+	}
+
+	private function getRequestZadarma () {
+		return ($_POST['caller_id']) ? array("caller_id" => $_POST['caller_id'], "called_did" => $_POST['called_did'], "callstart" => $_POST['callstart']) : false;
+	}
+
+	private function createPushString ($client_id) {
+		$v 	 = "v=1";
+		$tid = "&tid=" . get_option('id_analytic');
+		$t   = "&t=" . get_option('type_event');
+		$ec  = "&ec=" . get_option('context');
+		$ea  = "&ea=" . get_option('event');
+		$el  = "&el=" . get_option('event_label');
+		$ev  = "&ev=" . get_option('cost');
+		return "http://www.google-analytics.com/collect?" . $v . $tid . '&cid=' . $client_id . $t . $ec . $ea . $el . $ev;	;
+	}
+
+	private function getElapsedTime ($time) {
+
+	}
+
+	private function createReportEmail ($data = array()) {
+		
+	}
+
+	private function pushedCall () {
+		$phones = $this->getNumbersForPush();
+		if (!$phones) {
+			return;
+		} 
+		$zadarmaData = $this->getRequestZadarma();
+		if(!$zadarmaData) {
+			return;
+		}
+		
+		$dataEmail = array('zadarma' => $zadarmaData);
+
+		global $wpdb;
+
+		foreach ($phones as $p) {
+			if ($p->number_telephone == $zadarmaData['called_did'] && !empty($p->id_analytic)){
+				$wpdb->query("UPDATE " . $wpdb->prefix . "calltracking_telephone SET time_active = '". $this->get_active_time() ."', time_expectation = '". $this->get_time_expectation() ."' WHERE id_analytic = '{$p->id_analytic}'");
+				$urlGoogleHit = $this->createPushString($p->id_analytic);
+				
+				$dataEmail['clientId'] = $p->id_analytic; 
+				$dataEmail['urlGoogleHit'] = $urlGoogleHit;
+				file_get_contents($urlGoogleHit);
+				break;
+			}
+		}
+
+		$body = $this->createReportEmail($dataEmail);
+		
+		$header = "From: sv@computers.net.ua\r\n"; 
+		$header.= "MIME-Version: 1.0\r\n"; 
+		$header.= "Content-Type: text/plain; charset=utf-8\r\n"; 
+		$header.= "X-Priority: 1\r\n"; 
+
+		mail("sv@computers.net.ua", "Event in Google Analytics", $body, $header);
+
+	}
 }
 

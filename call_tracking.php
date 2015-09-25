@@ -33,12 +33,16 @@ add_action('wp_ajax_nopriv_get_dnumber', 'ajax_get_number');
 add_action('wp_ajax_get_dnumber', 'ajax_get_number');
 
 
-function count_busy_number () {
+/*function count_busy_number () {
 	global $wpdb;
 	$numbers = $wpdb->get_row("SELECT COUNT(id) as count_number FROM " . $wpdb->prefix . "calltracking_telephone WHERE id_analytic <> '' AND time_expectation > NOW()");
 	$wpdb->query("INSERT INTO " . $wpdb->prefix . "busy_number (date_report, count_number) VALUES 
 				 (NOW(), '{$numbers->count_number}')");
 }
+if(isset($_GET['doing_wp_cron']) && $_GET['doing_wp_cron'] == 'count_busy_number') {
+	count_busy_number();
+};
+*/
 
 function push_call_ () {
 	global $wpdb;
@@ -107,6 +111,3 @@ if(isset($_POST['caller_id'])) {
 	push_call_();
 };
 
-if(isset($_GET['doing_wp_cron']) && $_GET['doing_wp_cron'] == 'count_busy_number') {
-	count_busy_number();
-};
