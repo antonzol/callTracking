@@ -8,21 +8,35 @@ class CallTracking {
 	public $cookie = null;
 	public $time_active = "";
 	public $time_expectation = "";
+	public $options = array();
 
 	public function __construct () 
 	{
 		
 		$this->update_phone_table();
+		/*if (is_admin()) {
+			return;
+		}*/
+
+		$this->options['time_expectation'] = get_option('time_expectation');
+		$this->options['time_active'] = get_option('time_active');
+		$this->time_active = date("Y-m-d H:i:s", $this->get_active_time());
+		$this->time_expectation = date("Y-m-d H:i:s", $this->get_time_expectation());
 		$this->default_number = get_option('default_number');
-	
+		
+
+		if ($_POST['caller_id']) {
+			$this->pushedCall();
+			return;
+		}
+
 		$this->ip = $this->get_ip_address();
 		if(!$this->check_ip_address($this->ip)) {
 			$this->numberInfo['number'] = $this->default_number;
+			add_shortcode('call_tracking_number', array($this, 'createNumber'));
 			return;		
 		}
 
-		$this->time_active = date("Y-m-d H:i:s", $this->get_active_time());
-		$this->time_expectation = date("Y-m-d H:i:s", $this->get_time_expectation());
 		
 		if(!$this->check_cookie()) {
 			wp_register_script("get_dynamic_number", plugins_url() . "/callTracking/js/get_number.js", array(), false, true);
@@ -50,7 +64,6 @@ class CallTracking {
 		$wpdb->query("CREATE TABLE IF NOT EXISTS " . $wpdb->prefix . "calltracking_telephone 
 														(	id int PRIMARY KEY auto_increment,
 															number_telephone varchar(20),
-															extension_number varchar(20), 
 															id_analytic varchar(255) NOT NULL,
 															time_active datetime NOT NULL,
 															time_expectation datetime NOT NULL
@@ -69,7 +82,7 @@ class CallTracking {
 															cookie varchar(255),
 	  														called_did varchar(20) NOT NULL,
 	  														caller_id varchar(20) NOT NULL,
-	  														date_report date NOT NULL,
+	  														date_report datetime NOT NULL,
 	  														issued_dynamic_number int(1) NOT NULL,
 	 														elapsed_time varchar(20) NOT NULL,
 	 														status int(1) NOT NULL
@@ -77,8 +90,8 @@ class CallTracking {
 		add_option('default_number', '');
 		add_option('secret', '');
 		add_option('id_analytic', '');
-		add_option('time_active', '00:00');
-		add_option('time_expectation', '00:00');
+		add_option('time_active', '0');
+		add_option('time_expectation', '0');
 		add_option('event', '');
 		add_option('event_label', '');
 		add_option('type_event', '');
@@ -162,7 +175,7 @@ class CallTracking {
 		$time = getdate(time());
 		$temp = mktime(
 					   $time['hours'] + 3, 
-					   $time['minutes'] + get_option('time_active'), 
+					   $time['minutes'] + $this->options['time_active'], 
 					   $time['seconds'], 
 					   $time['mon'], 
 					   $time['mday'], 
@@ -176,7 +189,7 @@ class CallTracking {
 		$time = getdate(time());
 		$temp = mktime(
 					   $time['hours'] + 3, 
-					   $time['minutes'] + get_option('time_active') + get_option('time_expectation'), 
+					   $time['minutes'] + $this->options['time_active'] + $this->options['time_expectation'], 
 					   $time['seconds'], 
 					   $time['mon'], 
 					   $time['mday'], 
@@ -240,12 +253,28 @@ class CallTracking {
 		return "http://www.google-analytics.com/collect?" . $v . $tid . '&cid=' . $client_id . $t . $ec . $ea . $el . $ev;	;
 	}
 
-	private function getElapsedTime ($time) {
-
+	private function getElapsedTime ($t) {
+		$timeStart = strtotime($t . " - " . $this->options['time_active'] . " min");
+		$elapsed_time = date("i:s", time() - $timeStart);
+		return $elapsed_time;
 	}
 
 	private function createReportEmail ($data = array()) {
-		
+		$body  = "<table>";
+		$body .= "<tr>";
+		$body .= "<td>Номер звонящего</td><td>" . $data['zadarma']['caller_id'] . "<td/>";
+		$body .= "</tr>";
+		$body .= "<tr>";
+		$body .= "<td>Закрепленный за абонентом номер</td><td>" . $data['zadarma']['called_did'] . "<td/>";
+		$body .= "</tr>";
+		$body .= "<tr>";
+		$body .= "<td>ID клиента</td><td>" . $data['clientId'] . "<td/>";
+		$body .= "</tr>";
+		$body .= "<tr>";
+		$body .= "<td>Ссылка хита</td><td>" . $data['urlGoogleHit'] . "<td/>";
+		$body .= "</tr>";
+		$body .= "</table>";
+		return $body;	
 	}
 
 	private function pushedCall () {
@@ -264,11 +293,16 @@ class CallTracking {
 
 		foreach ($phones as $p) {
 			if ($p->number_telephone == $zadarmaData['called_did'] && !empty($p->id_analytic)){
-				$wpdb->query("UPDATE " . $wpdb->prefix . "calltracking_telephone SET time_active = '". $this->get_active_time() ."', time_expectation = '". $this->get_time_expectation() ."' WHERE id_analytic = '{$p->id_analytic}'");
+				$wpdb->query("UPDATE " . $wpdb->prefix . "calltracking_telephone SET time_active = '{$this->time_active}', time_expectation = '{$this->time_expectation}' WHERE id_analytic = '{$p->id_analytic}'");
 				$urlGoogleHit = $this->createPushString($p->id_analytic);
-				
 				$dataEmail['clientId'] = $p->id_analytic; 
 				$dataEmail['urlGoogleHit'] = $urlGoogleHit;
+				$elapsed_time = $this->getElapsedTime($p->time_active);
+
+				$temp = $this->options['time_active'] + $this->options['time_expectation'];
+
+				$wpdb->query("UPDATE " . $wpdb->prefix . "issued_number SET caller_id = '". $zadarmaData['caller_id'] ."', elapsed_time = '{$elapsed_time}', status = 1 
+							  WHERE called_did = '{$p->number_telephone}' AND cookie = '{$p->id_analytic}' AND date_report >= DATE(NOW() - INTERVAL {$temp} minute)");
 				file_get_contents($urlGoogleHit);
 				break;
 			}
@@ -276,10 +310,10 @@ class CallTracking {
 
 		$body = $this->createReportEmail($dataEmail);
 		
-		$header = "From: sv@computers.net.ua\r\n"; 
-		$header.= "MIME-Version: 1.0\r\n"; 
-		$header.= "Content-Type: text/plain; charset=utf-8\r\n"; 
-		$header.= "X-Priority: 1\r\n"; 
+		$header ="Content-type: text/html; charset=\"windows-1251\"";
+		$header.="From: Evgen <evgen@mail.ru>";
+		$header.="Subject: Event in Google Analytics";
+		$header.="Content-type: text/html; charset=\"windows-1251\"";
 
 		mail("sv@computers.net.ua", "Event in Google Analytics", $body, $header);
 
