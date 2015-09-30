@@ -321,10 +321,9 @@ function getWaitingTimeDataArray () {
 	foreach ($waitingTime as $key => $value) {
 		$tmp = $value->date_report;
 		preg_match_all("/\d{2}/", $value->elapsed_time, $temp);
-		$hours = (int)($temp[0][0]);
-		$min = (int)($temp[0][1]);
-		$sec = (int)($temp[0][2]);
-		$time = $hours * 3600 + $min * 60 + $sec;
+		$min = (int)($temp[0][0]);
+		$sec = (int)($temp[0][1]);
+		$time = $min * 60 + $sec;
 
 		$result[$tmp]['avg'] += $time;
 		$result[$tmp]['count'] += 1;
@@ -354,9 +353,9 @@ function create_options_statistic () {
 	<div class="tabs-container">
 		<div class="tabs-container__item tabs-container__item--active">
 			<div class="wrap">
-				<h2>Статистика по выдаче номеров:</h2>
+				<h2 class="tabs-container__item__title">Статистика по выдаче номеров:</h2>
 				<canvas id="issuedNumber" style="width:100%; height:500px;"></canvas>
-				<p>Показать за</p>
+				<p class="buttons-description">Показать за</p>
 				<div class="buttons__switch">
 					<span class="buttons__item buttons__item--active" data-item="30">Месяц</span>
 					<span class="buttons__item" data-item="14">14 дней</span>
@@ -498,7 +497,7 @@ function create_options_statistic () {
 		<?php if($busyNumber) : ?>
 		<div class="tabs-container__item">
 			<div class="wrap">
-				<h2>Статистика занаятости номеров с групировкой каждые (10 мин) за последие 30 дней:</h2>
+				<h2 class="tabs-container__item__title">Статистика занаятости номеров с групировкой каждые (10 мин) за последие 30 дней:</h2>
 			</div>
 			<canvas id="busyNumber" style="width:100%; height:500px;"></canvas>
 			<script>
@@ -548,7 +547,7 @@ function create_options_statistic () {
 					optionsBusy.pointDot = false;
 					var busyNumberChart = new Chart(ctxBusyNumber).Line(dataBusyNumber, optionsBusy);
 			</script>
-			<p style="font-size: 18px; margin: 10px 0;">Количество занятых номеров: </p>
+			<p style="font-size: 18px; margin: 10px 0;">Табличное представление</p>
 			<table class="wp-list-table widefat striped pages table_reports" style="width: 12000px;">
 				<tr>
 					<td>
@@ -580,7 +579,7 @@ function create_options_statistic () {
 		<?php if($waitingTime) : ?>
 		<div class="tabs-container__item">
 			<div class="wrap">
-				<h2>Статистика времени за последние 30 дней :</h2>
+				<h2 class="tabs-container__item__title">Статистика времени за последние 30 дней :</h2>
 			</div>
 			<table class="wp-list-table widefat striped pages table_reports" style="width: 500px;">
 				<tr>
@@ -593,13 +592,13 @@ function create_options_statistic () {
 					<td><?php echo $key; ?></td>
 					<?php 
 					if($value['avg'] != 0 && $value['count'] != 0) {
-						$avg =  date("H:i:s", mktime(0, 0, $value['avg'] / $value['count']));
+						$avg =  date("i:s", mktime(0, 0, $value['avg'] / $value['count']));
 					} else {
 						$avg = "00:00";
 					}
 					?>
 					<td><?php echo $avg; ?></td>
-					<td><?php echo date("H:i:s", mktime(0, 0, $value['max'])); ?></td>
+					<td><?php echo date("i:s", mktime(0, 0, $value['max'])); ?></td>
 				</tr>
 				<?php endforeach; ?>
 			</table>
@@ -607,6 +606,9 @@ function create_options_statistic () {
 		<?php endif;?>
 	</div>
 	<style>
+		.table_reports {
+			text-align: center;
+		}
 		.tabs-menu {
 			display: inline-block;
 			background-color: #23282D;
@@ -632,6 +634,30 @@ function create_options_statistic () {
 		}
 		.tabs-container__item--active {
 			display: block;
+		}
+		.tabs-container__item__title {
+
+		}
+		.buttons-description {
+			font-size: 16px;
+    		font-weight: 600;
+		}
+		.buttons__switch {
+			display: inline-block;
+    		background-color: #0073AA;
+			margin-bottom: 20px;
+		}
+		.buttons__item {
+			display: inline-block;
+			padding: 10px 20px;
+			text-transform: uppercase;
+			font-size: 16px;
+			color: #fff;
+			cursor: pointer;
+		}
+		.buttons__item--active {
+			background-color: #fff;
+			color: #000;
 		}
 	</style>
 	<script>
