@@ -1,7 +1,7 @@
 <?php 
 
 function add_admin_page () {
-	add_menu_page('Настройки Call Tracking','Call Tracking', 'manage_options', 'call_tracking', 'create_options_page', 'dashicons-phone', 80);
+	add_menu_page('Настройки Call Tracking','Call Tracking', 'manage_options', 'call_tracking', 'create_options_page', 'dashicons-phone', 81);
 	add_submenu_page('call_tracking','Фильтр по IP', 'Фильтр IP', 'manage_options', 'filter_ip', 'create_options_ip');
 	add_submenu_page('call_tracking','Статистика', 'Статистика', 'manage_options', 'statistic', 'create_options_statistic');
 
@@ -342,7 +342,7 @@ function create_options_statistic () {
 	<?php $issuedData = getIssuetDataArray(30); ?>
 	<?php $busyNumber = getBusyNumbersDataArray(); ?>
 	<?php $waitingTime = getWaitingTimeDataArray(); ?>
-
+	<div></div>
 	<ul class="tabs-menu">
 		<?php if($issuedData) : ?><li><a href="#" class="menu__item menu__item--active" data="0">Выдача номеров</a></li><?php endif; ?>
 		<?php if($busyNumber) : ?><li><a href="#" class="menu__item" data="1">Занятые номера</a></li><?php endif; ?>
@@ -420,8 +420,8 @@ function create_options_statistic () {
 					}
 
 					data.labels = labelsDate;
-					data.datasets[0]['data'] = dataDinamic;
-					data.datasets[1]['data'] = dataDefault;
+					data.datasets[0]['data'] = dataDefault;
+					data.datasets[1]['data'] = dataDinamic;
 					
 					var myLineChart = new Chart(ctx).Line(data, options);
 		
@@ -435,8 +435,8 @@ function create_options_statistic () {
 							dataDefault.push(dataChart[key]['default']);
 						}
 						data.labels = labelsDate;
-						data.datasets[0]['data'] = dataDinamic;
-						data.datasets[1]['data'] = dataDefault;
+						data.datasets[0]['data'] = dataDefault;
+						data.datasets[1]['data'] = dataDinamic;
 						myLineChart.destroy();
 						myLineChart = new Chart(ctx).Line(data, options);
 					}
@@ -508,12 +508,19 @@ function create_options_statistic () {
 
 					var i = 0;
 					for (key in busyArray) {
-						if (i % 6 == 0)
+						if (i % 6 == 0) {
 							busyArrayLabels.push(key);
+						} 
+						else {
+							busyArrayLabels.push("");
+						}
 						busyArrayData0.push(busyArray[key]['max']);
 						busyArrayData1.push((busyArray[key]['summa'] != 0 && busyArray[key]['count']) ? busyArray[key]['summa'] / busyArray[key]['count'] : 0);
 						i++;
 					}
+
+					console.log(busyArrayData0);
+
 					var ctxBusyNumber = document.getElementById("busyNumber").getContext("2d");
 					var dataBusyNumber = {
 					    labels: busyArrayLabels,
@@ -526,7 +533,7 @@ function create_options_statistic () {
 					            pointStrokeColor: "#fff",
 					            pointHighlightFill: "#fff",
 					            pointHighlightStroke: "rgba(151,187,205,1)",
-					            data: busyArrayData0
+					            data: busyArrayData1
 					        },
 					        {
         			    		label: "Среднее",
@@ -536,7 +543,7 @@ function create_options_statistic () {
         			    		pointStrokeColor: "#fff",
         			    		pointHighlightFill: "#fff",
         			    		pointHighlightStroke: "rgba(220,220,220,1)",
-        			    		data: busyArrayData1
+        			    		data: busyArrayData0
         					},
 					    ]
 					};
