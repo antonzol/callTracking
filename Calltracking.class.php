@@ -14,10 +14,7 @@ class CallTracking {
 	{
 		
 		$this->update_phone_table();
-		/*if (is_admin()) {
-			return;
-		}*/
-
+		
 		$this->options['time_expectation'] = get_option('time_expectation');
 		$this->options['time_active'] = get_option('time_active');
 		$this->time_active = date("Y-m-d H:i:s", $this->get_active_time());
@@ -134,7 +131,13 @@ class CallTracking {
 	{
 		global $wpdb;
 		$array_ip = $wpdb->get_col("SELECT ip FROM " . $wpdb->prefix . "ip_ignore");
-		return (in_array($ip_address, $array_ip)) ? false : true;
+		foreach ($array_ip as $key => $value) {
+			if($ip_address == $value->ip || preg_match("/^(". $value->ip .")/", $ip_address)) {
+				return false;
+			}
+		}
+		 	
+		return true;
 	}
 	
 	private function check_cookie () 
@@ -278,14 +281,21 @@ class CallTracking {
 	}
 
 	private function pushedCall () {
-		$phones = $this->getNumbersForPush();
-		if (!$phones) {
-			return;
-		} 
 		$zadarmaData = $this->getRequestZadarma();
 		if(!$zadarmaData) {
 			return;
 		}
+		
+		if($zadarmaData['called_did'] === $this->default_number) {
+			$googleAnalitycURL = $this->createPushString('11111111.1111111111');
+			file_get_contents($googleAnalitycURL);
+			return;
+		}
+
+		$phones = $this->getNumbersForPush();
+		if (!$phones) {
+			return;
+		} 
 		
 		$dataEmail = array('zadarma' => $zadarmaData);
 

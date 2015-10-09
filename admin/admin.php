@@ -287,16 +287,14 @@ function getBusyNumbersDataArray () {
 	$result = array();
 	for ($i = 0; $i < 144; $i++) {
 		$tempTime = date("H:i", strtotime("2015-09-29 00:00:00") + (60 * $i * 10));
-		$result[$tempTime]['count'] = 0;
-		$result[$tempTime]['summa'] = 0;	
 		$result[$tempTime]['max'] = 0;
+		$result[$tempTime]['array_count'] = array();
 	}
 
 	foreach ($busy_number as $key => $value) {
 		$tmp = date("H:i", strtotime($value->date_report));
-		$result[$tmp]['count'] += 1;
-		$result[$tmp]['summa'] += $value->count_number;
 		$result[$tmp]['max'] = ($result[$tmp]['max'] < $value->count_number) ? $value->count_number : $result[$tmp]['max'];
+		$result[$tmp]['array_count'][$value->count_number] = (isset($result[$tmp]['array_count'][$value->count_number])) ? $result[$tmp]['array_count'][$value->count_number] + 1 : 1; 
 	}
 
 	return $result;
@@ -504,7 +502,8 @@ function create_options_statistic () {
 					var busyArray = <?php echo json_encode($busyNumber); ?>,
 						busyArrayLabels = [],
 						busyArrayData0 = [],
-						busyArrayData1 = [];
+						busyArrayData2 = [],
+						busyArrayData3 = [];
 
 					var i = 0;
 					for (key in busyArray) {
@@ -515,11 +514,21 @@ function create_options_statistic () {
 							busyArrayLabels.push("");
 						}
 						busyArrayData0.push(busyArray[key]['max']);
-						busyArrayData1.push((busyArray[key]['summa'] != 0 && busyArray[key]['count']) ? busyArray[key]['summa'] / busyArray[key]['count'] : 0);
+						var max1 = 0, max2 = 0;
+						for (item in busyArray[key]['array_count']) {
+							if(item > max1 && busyArray[key]['array_count'][item] >= 2) {
+								max1 = item;
+							}
+							if(item > max2 && busyArray[key]['array_count'][item] >= 3) {
+								max2 = item;
+							}
+						}
+						busyArrayData2.push(max1);
+						busyArrayData3.push(max2);
+
 						i++;
 					}
 
-					console.log(busyArrayData0);
 
 					var ctxBusyNumber = document.getElementById("busyNumber").getContext("2d");
 					var dataBusyNumber = {
@@ -527,24 +536,34 @@ function create_options_statistic () {
 					    datasets: [
 					        {
 					            label: "Максимум",
-					            fillColor: "rgba(151,187,205,0.2)",
-					            strokeColor: "rgba(151,187,205,1)",
+					            fillColor: "rgba(151,187,205, 0)",
+					            strokeColor: "rgba(151,187,205, 1)",
 					            pointColor: "rgba(151,187,205,1)",
 					            pointStrokeColor: "#fff",
 					            pointHighlightFill: "#fff",
 					            pointHighlightStroke: "rgba(151,187,205,1)",
-					            data: busyArrayData1
+					            data: busyArrayData0
 					        },
-					        {
-        			    		label: "Среднее",
-        			    		fillColor: "rgba(255,0,0,0.2)",
-        			    		strokeColor: "rgba(255,0,0,0.5)",
+        					{
+        			    		label: "Максимум - 1",
+        			    		fillColor: "rgba(153,213,79,0)",
+        			    		strokeColor: "rgba(153,213,79,1)",
         			    		pointColor: "rgba(220,220,220,1)",
         			    		pointStrokeColor: "#fff",
         			    		pointHighlightFill: "#fff",
         			    		pointHighlightStroke: "rgba(220,220,220,1)",
-        			    		data: busyArrayData0
+        			    		data: busyArrayData2
         					},
+        					{
+        			    		label: "Максимум - 2",
+        			    		fillColor: "rgba(79,213,255,0)",
+        			    		strokeColor: "rgba(79,213,255,1)",
+        			    		pointColor: "rgba(220,220,220,1)",
+        			    		pointStrokeColor: "#fff",
+        			    		pointHighlightFill: "#fff",
+        			    		pointHighlightStroke: "rgba(220,220,220,1)",
+        			    		data: busyArrayData3
+        					}
 					    ]
 					};
 
@@ -560,8 +579,9 @@ function create_options_statistic () {
 					<td>
 						<table>
 							<tr><th>Время:</th></tr>
-							<tr><th>Среднее:</th></tr>
 							<tr><th>MAX:</th></tr>
+							<tr><th>-1</th></tr>
+							<tr><th>-2</th></tr>
 						</table>
 					</td>
 					<?php foreach ($busyNumber as $key => $value) : ?>
@@ -571,10 +591,25 @@ function create_options_statistic () {
 								<td><?php echo  $key; ?></td>
 							</tr>
 							<tr>
-								<td style="background-color:rgba(255,0,0,0.5);"><?php echo ($value['summa'] != 0 && $value['count'] != 0) ? $value['summa'] / $value['count'] : 0; ?></td>
+								<td style="background-color:rgba(151,187,205,1);"><?php echo $value['max']; ?></td>
+							</tr>
+							<?php $max_1 = 0; ?>
+							<?php $max_2 = 0; ?>
+							<?php 
+								foreach ($value['array_count'] as $key => $val) {
+									if ($key > $max_1 && $val >= 2) {
+										$max_1 = $key;
+									} 
+									if ($key > $max_2 && $val >= 3) {
+										$max_2 = $key;
+									}
+								}
+							?>
+							<tr>
+								<td style="background-color: rgba(153,213,79,1);"><?php echo $max_1; ?></td>
 							</tr>
 							<tr>
-								<td style="background-color:rgba(151,187,205,1);"><?php echo $value['max']; ?></td>
+								<td style="background-color: rgba(79,213,255,1);"><?php echo $max_2; ?></td>
 							</tr>
 						</table>
 					</td>
