@@ -131,13 +131,7 @@ class CallTracking {
 	{
 		global $wpdb;
 		$array_ip = $wpdb->get_col("SELECT ip FROM " . $wpdb->prefix . "ip_ignore");
-		foreach ($array_ip as $key => $value) {
-			if($ip_address == $value->ip || preg_match("/^(". $value->ip .")/", $ip_address)) {
-				return false;
-			}
-		}
-		 	
-		return true;
+		return (in_array($ip_address, $array_ip)) ? false : true;
 	}
 	
 	private function check_cookie () 
