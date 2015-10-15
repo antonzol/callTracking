@@ -283,6 +283,12 @@ class CallTracking {
 		if($zadarmaData['called_did'] === $this->default_number) {
 			$googleAnalitycURL = $this->createPushString('11111111.1111111111');
 			file_get_contents($googleAnalitycURL);
+			file_get_contents("http://zavodstekko.ru/crm/add_lead.php?" . http_build_query(array(
+    			    "title" => "Звонок", 
+    			    "name" => "Неизвестно", 
+    			    "phone" => $zadarmaData['caller_id'],  
+    			    "clientID" => ""
+    			)));
 			return;
 		}
 
@@ -308,6 +314,12 @@ class CallTracking {
 				$wpdb->query("UPDATE " . $wpdb->prefix . "issued_number SET caller_id = '". $zadarmaData['caller_id'] ."', elapsed_time = '{$elapsed_time}', status = 1 
 							  WHERE called_did = '{$p->number_telephone}' AND cookie = '{$p->id_analytic}' AND date_report >= DATE(NOW() - INTERVAL {$temp} minute)");
 				file_get_contents($urlGoogleHit);
+				file_get_contents("http://zavodstekko.ru/crm/add_lead.php?" . http_build_query(array(
+    			    "title" => "Звонок", 
+    			    "name" => "Неизвестно", 
+    			    "phone" => $dataEmail['zadarma']['caller_id'],  
+    			    "clientID" => $p->id_analytic
+    			)));
 				break;
 			}
 		}
