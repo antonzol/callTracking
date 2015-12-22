@@ -15,8 +15,10 @@ register_deactivation_hook(__FILE__, array('CallTracking', 'uninstall__plugin'))
 
 add_filter('widget_text', 'do_shortcode');
 
+
 function initFunc () {
 	$callTracking = new CallTracking ();
+
 }
 
 add_action('init', 'initFunc');
